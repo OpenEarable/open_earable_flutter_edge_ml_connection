@@ -182,6 +182,12 @@ class OpenEarableEdgeMLConnection {
     return false;
   }
 
+  /// Stops collecting and cleans up stuff
+  Future<void> dispose() async {
+    await stop();
+    await collector.dispose();
+  }
+
   static List<Sensor> _getAllSensors(Wearable wearable) {
     if (wearable is SensorManager) {
       return (wearable as SensorManager).sensors;

@@ -80,7 +80,7 @@ class _WearableTrackerAppState extends State<WearableTrackerApp> {
       url: url,
       key: apiKey,
       name: datasetName,
-      readFrequencyLimitHz: 10,
+      readFrequencyLimitHz: null,
       wearableSensorGroups: _connectedWearables
           .map(
             (w) => WearableSensorGroup(
@@ -102,7 +102,7 @@ class _WearableTrackerAppState extends State<WearableTrackerApp> {
     CsvOpenEarableEdgeMLConnection newConnection =
         await OpenEarableEdgeMLConnection.createCsvConnection(
       name: datasetName,
-      readFrequencyLimitHz: 10,
+      readFrequencyLimitHz: null,
       wearableSensorGroups: _connectedWearables
           .map(
             (w) => WearableSensorGroup(
@@ -124,11 +124,12 @@ class _WearableTrackerAppState extends State<WearableTrackerApp> {
     _edgeMLConnection = newConnection;
   }
 
-  void _onStop() {
+  Future<void> _onStop() async {
     setState(() {
       _recording = false;
     });
-    _edgeMLConnection?.stop();
+    await _edgeMLConnection?.stop();
+    await _edgeMLConnection?.dispose();
     _edgeMLConnection = null;
   }
 

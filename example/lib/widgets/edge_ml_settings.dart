@@ -32,7 +32,7 @@ class _EdgeMLSettingsState extends State<EdgeMLSettings> {
   final TextEditingController _apiKeyController =
       TextEditingController(text: edgeMlApiKey);
   final TextEditingController _datasetNameController =
-      TextEditingController(text: "Example");
+      TextEditingController(text: "Wearable-Example");
 
   bool _tracking = false;
   bool _starting = false;

@@ -12,7 +12,7 @@ dependencies:
     git:
       url: https://github.com/OpenEarable/open_earable_flutter.git
       ref: main
-  edge_ml_dart: ^0.0.3
+  edge_ml_dart: ^0.0.4
 
 dev_dependencies:
   lints: ^5.0.0

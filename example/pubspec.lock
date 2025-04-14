@@ -93,10 +93,10 @@ packages:
     dependency: transitive
     description:
       name: edge_ml_dart
-      sha256: b028f0e6796f76dd8b552150b7a3fff86df7d4869e0b2e6b024c9b1135ce6ec5
+      sha256: "0fba83dfa7b5658859d22c5fa6352cae8aa3826a11954d3e41a5f327ef611588"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.3"
+    version: "0.0.4"
   fake_async:
     dependency: transitive
     description:
@@ -237,7 +237,7 @@ packages:
     description:
       path: "."
       ref: main
-      resolved-ref: "4e2c2078cf58551407fcf624802b08301e55acaf"
+      resolved-ref: "8bc2d7a39c51e1f5322a45fb03b9c48c75f6a7a0"
       url: "https://github.com/OpenEarable/open_earable_flutter.git"
     source: git
     version: "0.0.5"
@@ -388,10 +388,10 @@ packages:
     dependency: transitive
     description:
       name: permission_handler_apple
-      sha256: f84a188e79a35c687c132a0a0556c254747a08561e99ab933f12f6ca71ef3c98
+      sha256: f000131e755c54cf4d84a5d8bd6e4149e262cc31c5a8b1d698de1ac85fa41023
       url: "https://pub.dev"
     source: hosted
-    version: "9.4.6"
+    version: "9.4.7"
   permission_handler_html:
     dependency: transitive
     description:
@@ -440,6 +440,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
+  semaphore_plus:
+    dependency: transitive
+    description:
+      name: semaphore_plus
+      sha256: "2e05324ace8f4db9aa7ac9a9fa77e97082da4b0caff692e90a2c6f780658878f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   sky_engine:
     dependency: transitive
     description: flutter

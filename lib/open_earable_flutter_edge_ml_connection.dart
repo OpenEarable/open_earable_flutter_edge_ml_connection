@@ -20,7 +20,7 @@ class OpenEarableEdgeMLConnection {
 
   final List<StreamSubscription> _sensorSubscriptions = [];
 
-  final double readFrequencyLimitHz;
+  final double? readFrequencyLimitHz;
 
   // Map to accumulate sensor data until flush time.
   // Key is a unique name for the time series, value is a number.
@@ -32,7 +32,7 @@ class OpenEarableEdgeMLConnection {
     required this.wearableSensorGroups,
     required this.metaData,
     required this.collector,
-    required this.readFrequencyLimitHz,
+    this.readFrequencyLimitHz,
   });
 
   static Future<OpenEarableEdgeMLConnection> createOnlineConnection({
@@ -41,7 +41,7 @@ class OpenEarableEdgeMLConnection {
     required String name,
     required List<WearableSensorGroup> wearableSensorGroups,
     required Map<String, dynamic> metaData,
-    double readFrequencyLimitHz = 10,
+    double? readFrequencyLimitHz,
   }) async {
     final DatasetCollector collector = await OnlineDatasetCollector.create(
       url: url,
@@ -66,7 +66,7 @@ class OpenEarableEdgeMLConnection {
     required String name,
     required List<WearableSensorGroup> wearableSensorGroups,
     required Map<String, dynamic> metaData,
-    double readFrequencyLimitHz = 10,
+    double? readFrequencyLimitHz,
     bool allowUnsupportedString = false,
   }) async {
     final CsvDatasetCollector collector = await CsvDatasetCollector.create(
@@ -95,14 +95,32 @@ class OpenEarableEdgeMLConnection {
       for (var sensor in sensors) {
         if (sensor is Sensor<SensorIntValue> ||
             sensor is Sensor<SensorDoubleValue>) {
-          final subscription = sensor.sensorStream.listen((sensorValue) {
-            for (var i = 0; i < sensor.axisCount; i++) {
-              final timeSeriesName = _getDatapointName(wearable, sensor, i);
+          final subscription = sensor.sensorStream.listen(
+            (readFrequencyLimitHz != null)
+                ? (sensorValue) {
+                    for (var i = 0; i < sensor.axisCount; i++) {
+                      final timeSeriesName =
+                          _getDatapointName(wearable, sensor, i);
 
-              _accumulatedData[timeSeriesName] =
-                  double.parse(sensorValue.valueStrings[i]);
-            }
-          });
+                      _accumulatedData[timeSeriesName] =
+                          double.parse(sensorValue.valueStrings[i]);
+                    }
+                  }
+                : (sensorValue) {
+                    int timestamp = DateTime.now().millisecondsSinceEpoch;
+
+                    for (var i = 0; i < sensor.axisCount; i++) {
+                      final timeSeriesName =
+                          _getDatapointName(wearable, sensor, i);
+
+                      collector.addDataPoint(
+                        time: timestamp,
+                        name: timeSeriesName,
+                        value: double.parse(sensorValue.valueStrings[i]),
+                      );
+                    }
+                  },
+          );
           _sensorSubscriptions.add(subscription);
         }
       }
@@ -112,10 +130,13 @@ class OpenEarableEdgeMLConnection {
       });
     }
 
-    final intervalMs = (1000 / readFrequencyLimitHz).round();
-    _writeTimer = Timer.periodic(Duration(milliseconds: intervalMs), (_) async {
-      await _flushPendingData();
-    });
+    if (readFrequencyLimitHz != null) {
+      final intervalMs = (1000 / readFrequencyLimitHz!).round();
+      _writeTimer =
+          Timer.periodic(Duration(milliseconds: intervalMs), (_) async {
+        await _flushPendingData();
+      });
+    }
   }
 
   Future<void> _flushPendingData() async {
@@ -201,7 +222,7 @@ class CsvOpenEarableEdgeMLConnection extends OpenEarableEdgeMLConnection {
     required List<WearableSensorGroup> wearableSensorGroups,
     required Map<String, dynamic> metaData,
     required CsvDatasetCollector collector,
-    required double readFrequencyLimitHz,
+    double? readFrequencyLimitHz,
   }) : super._(
           wearableSensorGroups: wearableSensorGroups,
           metaData: metaData,

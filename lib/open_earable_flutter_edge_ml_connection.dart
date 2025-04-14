@@ -20,7 +20,7 @@ class OpenEarableEdgeMLConnection {
 
   final List<StreamSubscription> _sensorSubscriptions = [];
 
-  final double writeFrequencyHz;
+  final double readFrequencyLimitHz;
 
   // Map to accumulate sensor data until flush time.
   // Key is a unique name for the time series, value is a number.
@@ -32,7 +32,7 @@ class OpenEarableEdgeMLConnection {
     required this.wearableSensorGroups,
     required this.metaData,
     required this.collector,
-    required this.writeFrequencyHz,
+    required this.readFrequencyLimitHz,
   });
 
   static Future<OpenEarableEdgeMLConnection> createOnlineConnection({
@@ -41,7 +41,7 @@ class OpenEarableEdgeMLConnection {
     required String name,
     required List<WearableSensorGroup> wearableSensorGroups,
     required Map<String, dynamic> metaData,
-    double writeFrequencyHz = 10,
+    double readFrequencyLimitHz = 10,
   }) async {
     final DatasetCollector collector = await OnlineDatasetCollector.create(
       url: url,
@@ -56,7 +56,7 @@ class OpenEarableEdgeMLConnection {
       wearableSensorGroups: wearableSensorGroups,
       metaData: metaData,
       collector: collector,
-      writeFrequencyHz: writeFrequencyHz,
+      readFrequencyLimitHz: readFrequencyLimitHz,
     );
     await instance._initialize();
     return instance;
@@ -66,7 +66,7 @@ class OpenEarableEdgeMLConnection {
     required String name,
     required List<WearableSensorGroup> wearableSensorGroups,
     required Map<String, dynamic> metaData,
-    double writeFrequencyHz = 10,
+    double readFrequencyLimitHz = 10,
     bool allowUnsupportedString = false,
   }) async {
     final CsvDatasetCollector collector = await CsvDatasetCollector.create(
@@ -81,7 +81,7 @@ class OpenEarableEdgeMLConnection {
       wearableSensorGroups: wearableSensorGroups,
       metaData: metaData,
       collector: collector,
-      writeFrequencyHz: writeFrequencyHz,
+      readFrequencyLimitHz: readFrequencyLimitHz,
     );
     await instance._initialize();
     return instance;
@@ -112,7 +112,7 @@ class OpenEarableEdgeMLConnection {
       });
     }
 
-    final intervalMs = (1000 / writeFrequencyHz).round();
+    final intervalMs = (1000 / readFrequencyLimitHz).round();
     _writeTimer = Timer.periodic(Duration(milliseconds: intervalMs), (_) async {
       await _flushPendingData();
     });
@@ -201,12 +201,12 @@ class CsvOpenEarableEdgeMLConnection extends OpenEarableEdgeMLConnection {
     required List<WearableSensorGroup> wearableSensorGroups,
     required Map<String, dynamic> metaData,
     required CsvDatasetCollector collector,
-    required double writeFrequencyHz,
+    required double readFrequencyLimitHz,
   }) : super._(
           wearableSensorGroups: wearableSensorGroups,
           metaData: metaData,
           collector: collector,
-          writeFrequencyHz: writeFrequencyHz,
+          readFrequencyLimitHz: readFrequencyLimitHz,
         );
 
   String get filePath {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:open_earable_flutter/open_earable_flutter.dart';
 import 'package:edge_ml_dart/edge_ml_dart.dart';
 
@@ -10,6 +11,25 @@ class WearableSensorGroup {
     required this.wearable,
     this.sensors,
   });
+}
+
+String _getDatapointName(
+  Wearable wearable,
+  Sensor sensor,
+  int axisIndex,
+) {
+  String result =
+      '${wearable.name}--${wearable.deviceId}.${sensor.sensorName}.${sensor.axisNames[axisIndex]}';
+
+  result = result.replaceAll(" ", "_");
+  return result;
+}
+
+List<Sensor> _getAllSensors(Wearable wearable) {
+  if (wearable is SensorManager) {
+    return (wearable as SensorManager).sensors;
+  }
+  return [];
 }
 
 class OpenEarableEdgeMLConnection {
@@ -48,7 +68,7 @@ class OpenEarableEdgeMLConnection {
       key: key,
       name: name,
       useDeviceTime: false,
-      timeSeries: _getTimeSeriesNames(wearableSensorGroups),
+      timeSeries: _getTimeSeriesNames(wearableSensorGroups, false),
       metaData: metaData,
     );
 
@@ -72,7 +92,7 @@ class OpenEarableEdgeMLConnection {
     final CsvDatasetCollector collector = await CsvDatasetCollector.create(
       name: name,
       useDeviceTime: false,
-      timeSeries: _getTimeSeriesNames(wearableSensorGroups),
+      timeSeries: _getTimeSeriesNames(wearableSensorGroups, allowUnsupportedString),
       metaData: metaData,
       allowUnsupportedString: allowUnsupportedString,
     );
@@ -94,7 +114,8 @@ class OpenEarableEdgeMLConnection {
 
       for (var sensor in sensors) {
         if (sensor is Sensor<SensorIntValue> ||
-            sensor is Sensor<SensorDoubleValue>) {
+            sensor is Sensor<SensorDoubleValue> ||
+            sensor is HeartRateVariabilitySensor) {
           final subscription = sensor.sensorStream.listen(
             (readFrequencyLimitHz != null)
                 ? (sensorValue) {
@@ -161,20 +182,9 @@ class OpenEarableEdgeMLConnection {
     _writeTimer?.cancel();
   }
 
-  static String _getDatapointName(
-    Wearable wearable,
-    Sensor sensor,
-    int axisIndex,
-  ) {
-    String result =
-        '${wearable.name}--${wearable.deviceId}.${sensor.sensorName}.${sensor.axisNames[axisIndex]}';
-
-    result = result.replaceAll(" ", "_");
-    return result;
-  }
-
   static List<String> _getTimeSeriesNames(
     List<WearableSensorGroup> wearableSensorGroups,
+    bool allowUnsupportedString,
   ) {
     final List<String> timeSeriesNames = [];
 
@@ -184,10 +194,16 @@ class OpenEarableEdgeMLConnection {
 
       for (var sensor in sensors) {
         if (sensor is Sensor<SensorIntValue> ||
-            sensor is Sensor<SensorDoubleValue>) {
+            sensor is Sensor<SensorDoubleValue> ||
+            sensor is HeartRateVariabilitySensor) {
           for (var i = 0; i < sensor.axisCount; i++) {
             timeSeriesNames.add(
               _getDatapointName(wearable, sensor, i),
+            );
+          }
+          if (sensor is HeartRateVariabilitySensor && allowUnsupportedString) {
+            timeSeriesNames.add(
+              '${wearable.name}--${wearable.deviceId}.${sensor.sensorName}.rrIntervalsMs',
             );
           }
         }
@@ -208,13 +224,6 @@ class OpenEarableEdgeMLConnection {
     await stop();
     await collector.dispose();
   }
-
-  static List<Sensor> _getAllSensors(Wearable wearable) {
-    if (wearable is SensorManager) {
-      return (wearable as SensorManager).sensors;
-    }
-    return [];
-  }
 }
 
 class CsvOpenEarableEdgeMLConnection extends OpenEarableEdgeMLConnection {
@@ -228,7 +237,34 @@ class CsvOpenEarableEdgeMLConnection extends OpenEarableEdgeMLConnection {
           metaData: metaData,
           collector: collector,
           readFrequencyLimitHz: readFrequencyLimitHz,
-        );
+        ) {
+    if (collector.allowUnsupportedString) {
+      for (var group in wearableSensorGroups) {
+        final wearable = group.wearable;
+        final sensors = group.sensors ?? _getAllSensors(wearable);
+
+        for (var sensor in sensors) {
+          if (sensor is HeartRateVariabilitySensor) {
+            final subscription = sensor.sensorStream.listen(
+              (sensorValue) {
+                int timestamp = DateTime.now().millisecondsSinceEpoch;
+
+                String timeSeriesName =
+                    '${wearable.name}--${wearable.deviceId}.${sensor.sensorName}.rrIntervalsMs';
+
+                collector.addStringDataPoint(
+                  time: timestamp,
+                  name: timeSeriesName,
+                  value: jsonEncode(sensorValue.rrIntervalsMs),
+                );
+              },
+            );
+            _sensorSubscriptions.add(subscription);
+          }
+        }
+      }
+    }
+  }
 
   String get filePath {
     return (collector as CsvDatasetCollector).filePath;

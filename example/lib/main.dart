@@ -113,6 +113,7 @@ class _WearableTrackerAppState extends State<WearableTrackerApp> {
       metaData: {
         'app': 'Connection Example',
       },
+      allowUnsupportedString: true,
     );
 
     if (kDebugMode) {

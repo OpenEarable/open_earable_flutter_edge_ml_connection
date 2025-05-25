@@ -8,10 +8,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  open_earable_flutter:
-    git:
-      url: https://github.com/OpenEarable/open_earable_flutter.git
-      ref: main
+  open_earable_flutter: ^0.1.0
   edge_ml_dart: ^0.0.4
 
 dev_dependencies:

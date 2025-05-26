@@ -1,6 +1,6 @@
 name: open_earable_flutter_edge_ml_connection
 description: Connects OpenEarables and other wearables to Edge-ML
-version: 0.0.1
+version: 0.0.2
 repository: https://github.com/OpenEarable/open_earable_flutter_edge_ml_connection
 
 environment:
